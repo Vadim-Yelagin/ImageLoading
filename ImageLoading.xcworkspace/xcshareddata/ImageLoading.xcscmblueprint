@@ -1,0 +1,30 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "43797E5AE668A0C006DC62E8686706BAF6A5F8B8",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "EB5A8289E0AF43A52C0126779331D77DF149B005" : 0,
+    "43797E5AE668A0C006DC62E8686706BAF6A5F8B8" : 0
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "277CCEB2-AC43-4000-BE7F-CF56EE97452D",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "EB5A8289E0AF43A52C0126779331D77DF149B005" : "matador-ios\/",
+    "43797E5AE668A0C006DC62E8686706BAF6A5F8B8" : "ImageLoading\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "ImageLoading",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "ImageLoading.xcworkspace",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "github.com-me:Vadim-Yelagin\/ImageLoading.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "43797E5AE668A0C006DC62E8686706BAF6A5F8B8"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "github.com:Fueled\/matador-ios.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "EB5A8289E0AF43A52C0126779331D77DF149B005"
+    }
+  ]
+}
