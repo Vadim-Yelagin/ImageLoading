@@ -22,7 +22,8 @@ public final class DiscardableTask<T, E>: InUseReporting {
 	public func observe(observer: DiscardableTaskState<T, E> -> Void) -> () -> () {
 		self.retry?()
 		observer(state)
-		let idx = observerCounter++
+		let idx = observerCounter
+		observerCounter += 1
 		observers[idx] = observer
 		return { [weak self] in self?.unobserve(idx) }
 	}
