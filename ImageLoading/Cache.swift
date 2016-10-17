@@ -26,24 +26,24 @@ public final class Cache<K: Hashable, V: InUseReporting> {
 		}
 	}
 
-	private var notificationObservers = [NSObjectProtocol]()
+	fileprivate var notificationObservers = [NSObjectProtocol]()
 
 	public init() {
-		let nc = NSNotificationCenter.defaultCenter()
-		let mainQueue = NSOperationQueue.mainQueue()
+		let nc = NotificationCenter.default
+		let mainQueue = OperationQueue.main
 		let purgingNotificationNames = [
-			UIApplicationDidEnterBackgroundNotification,
-			UIApplicationDidReceiveMemoryWarningNotification]
+			NSNotification.Name.UIApplicationDidEnterBackground,
+			NSNotification.Name.UIApplicationDidReceiveMemoryWarning]
 		for name in purgingNotificationNames {
 			notificationObservers.append(
-				nc.addObserverForName(name, object: nil, queue: mainQueue) {
+				nc.addObserver(forName: name, object: nil, queue: mainQueue) {
 					[weak self] _ in self?.purge()
 				})
 		}
 	}
 
 	deinit {
-		let nc = NSNotificationCenter.defaultCenter()
+		let nc = NotificationCenter.default
 		for notificationObserver in notificationObservers {
 			nc.removeObserver(notificationObserver)
 		}

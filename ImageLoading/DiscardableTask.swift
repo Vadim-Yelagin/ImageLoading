@@ -8,18 +8,18 @@
 import Foundation
 
 public enum DiscardableTaskState<T, E> {
-	case Undefined
-	case Loading
-	case Success(result: T)
-	case Failure(error: E)
+	case undefined
+	case loading
+	case success(result: T)
+	case failure(error: E)
 }
 
 public final class DiscardableTask<T, E>: InUseReporting {
 
-	private var observers: [Int: DiscardableTaskState<T, E> -> Void] = [:]
-	private var observerCounter = 0
+	fileprivate var observers: [Int: (DiscardableTaskState<T, E>) -> Void] = [:]
+	fileprivate var observerCounter = 0
 
-	public func observe(observer: DiscardableTaskState<T, E> -> Void) -> () -> () {
+	public func observe(_ observer: @escaping (DiscardableTaskState<T, E>) -> Void) -> () -> () {
 		self.retry?()
 		observer(state)
 		let idx = observerCounter
@@ -28,14 +28,14 @@ public final class DiscardableTask<T, E>: InUseReporting {
 		return { [weak self] in self?.unobserve(idx) }
 	}
 
-	private func unobserve(idx: Int) {
+	fileprivate func unobserve(_ idx: Int) {
 		self.observers[idx] = nil
 		if self.observers.isEmpty {
 			self.cancel?()
 		}
 	}
 
-	public var state: DiscardableTaskState<T, E> = .Undefined {
+	public var state: DiscardableTaskState<T, E> = .undefined {
 		didSet {
 			for (_, observer) in observers {
 				observer(state)
@@ -45,20 +45,20 @@ public final class DiscardableTask<T, E>: InUseReporting {
 
 	public var isUndefinedOrFailed: Bool {
 		switch state {
-		case .Undefined:
+		case .undefined:
 			return true
-		case .Failure:
+		case .failure:
 			return true
-		case .Loading:
+		case .loading:
 			return false
-		case .Success:
+		case .success:
 			return false
 		}
 	}
 
-	public var cancel: (Void -> Void)?
+	public var cancel: ((Void) -> Void)?
 
-	public var retry: (Void -> Void)?
+	public var retry: ((Void) -> Void)?
 
 	deinit {
 		self.cancel?()

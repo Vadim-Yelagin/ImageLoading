@@ -12,20 +12,20 @@ public final class ImageLoading {
 
 	public static let sharedInstance = ImageLoading()
 
-	private let cache = Cache<String, DiscardableTask<UIImage, NSError>>()
+	fileprivate let cache = Cache<String, DiscardableTask<UIImage, NSError>>()
 
-	public func taskWithURL(url: NSURL) -> DiscardableTask<UIImage, NSError> {
-		return taskWithRequest(NSURLRequest(URL: url))
+	public func taskWithURL(_ url: URL) -> DiscardableTask<UIImage, NSError> {
+		return taskWithRequest(URLRequest(url: url))
 	}
 
-	public func taskWithRequest(request: NSURLRequest) -> DiscardableTask<UIImage, NSError> {
-		let url = request.URL!.absoluteString!
+	public func taskWithRequest(_ request: URLRequest) -> DiscardableTask<UIImage, NSError> {
+		let url = request.url!.absoluteString
 		if let task = cache.storage[url] {
 			return task
 		} else {
 			let task = DiscardableTask<UIImage, NSError>()
 			task.retry = { [weak self, weak task] in
-				if let this = self, let task = task where task.isUndefinedOrFailed {
+				if let this = self, let task = task , task.isUndefinedOrFailed {
 					this.startTask(task, withRequest: request)
 				}
 			}
@@ -34,10 +34,10 @@ public final class ImageLoading {
 		}
 	}
 
-	public func cachedImageWithURLString(urlString: String?) -> UIImage? {
+	public func cachedImageWithURLString(_ urlString: String?) -> UIImage? {
 		if let urlString = urlString, let task = cache.storage[urlString] {
 			switch task.state {
-			case .Success(let result):
+			case .success(let result):
 				return result
 			default:
 				break
@@ -46,27 +46,27 @@ public final class ImageLoading {
 		return nil
 	}
 
-	private func startTask(task: DiscardableTask<UIImage, NSError>, withRequest request: NSURLRequest) {
-		task.state = .Loading
-		let session = NSURLSession.sharedSession()
-		let op = session.dataTaskWithRequest(request) {
+	fileprivate func startTask(_ task: DiscardableTask<UIImage, NSError>, withRequest request: URLRequest) {
+		task.state = .loading
+		let session = URLSession.shared
+		let op = session.dataTask(with: request, completionHandler: {
 			[weak task] data, response, error in
-			var state = DiscardableTaskState<UIImage, NSError>.Undefined
-			if let error = error {
+			var state = DiscardableTaskState<UIImage, NSError>.undefined
+			if let error = error as? NSError {
 				if error.domain == NSURLErrorDomain && error.code == NSURLErrorCancelled {
 					return
 				}
-				state = .Failure(error: error)
+				state = .failure(error: error)
 			} else if let data = data, let image = UIImage(data: data) {
-				state = .Success(result: image)
+				state = .success(result: image)
 			}
-			dispatch_async(dispatch_get_main_queue()) {
+			DispatchQueue.main.async {
 				task?.state = state
 				task?.cancel = nil
 			}
-		}
+		}) 
 		task.cancel = { [weak op, weak task] in
-			task?.state = .Undefined
+			task?.state = .undefined
 			op?.cancel()
 		}
 		op.resume()

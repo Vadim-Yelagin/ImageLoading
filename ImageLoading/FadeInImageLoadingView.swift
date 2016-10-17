@@ -8,31 +8,31 @@
 import Foundation
 import UIKit
 
-public class FadeInImageLoadingView: ImageLoadingView {
+open class FadeInImageLoadingView: ImageLoadingView {
 
-	public override func transitionFromState(
-		oldState: DiscardableTaskState<UIImage, NSError>,
+	open override func transition(
+		from oldState: DiscardableTaskState<UIImage, NSError>,
 		ofTask oldTask: DiscardableTask<UIImage, NSError>?,
-		toState newState: DiscardableTaskState<UIImage, NSError>,
+		to newState: DiscardableTaskState<UIImage, NSError>,
 		ofTask newTask: DiscardableTask<UIImage, NSError>?)
 	{
 		var fade = false
-		if let oldTask = oldTask, newTask = newTask where oldTask === newTask {
+		if let oldTask = oldTask, let newTask = newTask , oldTask === newTask {
 			switch (oldState, newState) {
-			case (.Loading, .Success):
+			case (.loading, .success):
 				fade = true
 			default:
 				break
 			}
 		}
 		func callSuper() {
-			super.transitionFromState(oldState, ofTask: oldTask, toState: newState, ofTask: newTask)
+			super.transition(from: oldState, ofTask: oldTask, to: newState, ofTask: newTask)
 		}
 		if fade {
-			UIView.transitionWithView(
-				self,
+			UIView.transition(
+				with: self,
 				duration: 0.25,
-				options: UIViewAnimationOptions.TransitionCrossDissolve,
+				options: UIViewAnimationOptions.transitionCrossDissolve,
 				animations: callSuper,
 				completion: nil)
 		} else {

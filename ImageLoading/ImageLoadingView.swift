@@ -7,13 +7,13 @@
 
 import UIKit
 
-public class ImageLoadingView: UIImageView {
+open class ImageLoadingView: UIImageView {
 
 	@IBInspectable public final var imageForUndefinedState: UIImage?
 	@IBInspectable public final var imageForLoadingState: UIImage?
 	@IBInspectable public final var imageForFailureState: UIImage?
 
-	private final var imageTaskUnobserve: (Void -> Void)?
+	fileprivate final var imageTaskUnobserve: ((Void) -> Void)?
 
 	public final var imageTask: DiscardableTask<UIImage, NSError>? {
 		didSet {
@@ -22,18 +22,18 @@ public class ImageLoadingView: UIImageView {
 				return
 			}
 			var prevTask = oldValue
-			var prevState = oldValue?.state ?? .Undefined
+			var prevState = oldValue?.state ?? .undefined
 			imageTaskUnobserve?()
 			imageTaskUnobserve = newValue?.observe {
 				[weak self] state in
 				if let this = self {
-					this.transitionFromState(prevState, ofTask: prevTask, toState: state, ofTask: newValue)
+					this.transition(from: prevState, ofTask: prevTask, to: state, ofTask: newValue)
 					prevState = state
 					prevTask = newValue
 				}
 			}
 			if newValue == nil {
-				self.transitionFromState(prevState, ofTask: prevTask, toState: .Undefined, ofTask: newValue)
+				self.transition(from: prevState, ofTask: prevTask, to: .undefined, ofTask: newValue)
 			}
 		}
 	}
@@ -42,31 +42,31 @@ public class ImageLoadingView: UIImageView {
 		imageTaskUnobserve?()
 	}
 
-	public func setCommonPlaceholderImage(image: UIImage?) {
+	open func setCommonPlaceholderImage(_ image: UIImage?) {
 		self.imageForUndefinedState = image
 		self.imageForLoadingState = image
 		self.imageForFailureState = image
 	}
 
-	public func setImageTaskWithImage(image: UIImage?) {
+	open func setImageTaskWithImage(_ image: UIImage?) {
 		let task = DiscardableTask<UIImage, NSError>()
 		if let image = image {
-			task.state = .Success(result: image)
+			task.state = .success(result: image)
 		} else {
-			task.state = .Undefined
+			task.state = .undefined
 		}
 		self.imageTask = task
 	}
 
-	public func setImageTaskWithURLString(urlString: String?) {
-		if let urlString = urlString, url = NSURL(string: urlString) {
+	open func setImageTaskWithURLString(_ urlString: String?) {
+		if let urlString = urlString, let url = URL(string: urlString) {
 			self.imageTask = ImageLoading.sharedInstance.taskWithURL(url)
 		} else {
 			self.imageTask = nil
 		}
 	}
 
-	public func setImageTaskWithURL(url: NSURL?) {
+	open func setImageTaskWithURL(_ url: URL?) {
 		if let url = url {
 			self.imageTask = ImageLoading.sharedInstance.taskWithURL(url)
 		} else {
@@ -74,7 +74,7 @@ public class ImageLoadingView: UIImageView {
 		}
 	}
 
-	public func setImageTaskWithRequest(request: NSURLRequest?) {
+	open func setImageTaskWithRequest(_ request: URLRequest?) {
 		if let request = request {
 			self.imageTask = ImageLoading.sharedInstance.taskWithRequest(request)
 		} else {
@@ -82,29 +82,29 @@ public class ImageLoadingView: UIImageView {
 		}
 	}
 
-	public func transitionFromState(
-		oldState: DiscardableTaskState<UIImage, NSError>,
+	open func transition(
+		from oldState: DiscardableTaskState<UIImage, NSError>,
 		ofTask oldTask: DiscardableTask<UIImage, NSError>?,
-		toState newState: DiscardableTaskState<UIImage, NSError>,
+		to newState: DiscardableTaskState<UIImage, NSError>,
 		ofTask newTask: DiscardableTask<UIImage, NSError>?)
 	{
 		switch newState {
-		case .Undefined:
+		case .undefined:
 			self.image = self.imageForUndefinedState
-		case .Loading:
+		case .loading:
 			self.image = self.imageForLoadingState
-		case .Success(let result):
+		case .success(let result):
 			self.image = result
-		case .Failure(_):
+		case .failure(_):
 			self.image = self.imageForFailureState
 		}
 	}
 
-	@IBAction public func retryImageTask() {
+	@IBAction open func retryImageTask() {
 		self.imageTask?.retry?()
 	}
 
-	@IBAction public func cancelImageTask() {
+	@IBAction open func cancelImageTask() {
 		self.imageTask?.cancel?()
 	}
 	
