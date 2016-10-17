@@ -19,13 +19,13 @@ public final class ImageLoading {
 	}
 
 	public func taskWithRequest(request: NSURLRequest) -> DiscardableTask<UIImage, NSError> {
-		let url = request.URL!.absoluteString
+		let url = request.URL!.absoluteString!
 		if let task = cache.storage[url] {
 			return task
 		} else {
 			let task = DiscardableTask<UIImage, NSError>()
 			task.retry = { [weak self, weak task] in
-				if let this = self, task = task where task.isUndefinedOrFailed {
+				if let this = self, let task = task where task.isUndefinedOrFailed {
 					this.startTask(task, withRequest: request)
 				}
 			}
@@ -35,7 +35,7 @@ public final class ImageLoading {
 	}
 
 	public func cachedImageWithURLString(urlString: String?) -> UIImage? {
-		if let urlString = urlString, task = cache.storage[urlString] {
+		if let urlString = urlString, let task = cache.storage[urlString] {
 			switch task.state {
 			case .Success(let result):
 				return result
@@ -57,7 +57,7 @@ public final class ImageLoading {
 					return
 				}
 				state = .Failure(error: error)
-			} else if let data = data, _ = response, image = UIImage(data: data) {
+			} else if let data = data, let image = UIImage(data: data) {
 				state = .Success(result: image)
 			}
 			dispatch_async(dispatch_get_main_queue()) {
