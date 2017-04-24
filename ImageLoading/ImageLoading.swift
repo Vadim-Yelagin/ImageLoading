@@ -9,23 +9,31 @@ import Foundation
 import UIKit
 
 public final class ImageLoading {
+	public typealias Task = DiscardableTask<UIImage>
 
-	public static let sharedInstance = ImageLoading()
+	public enum Error: Swift.Error, LocalizedError {
+		case invalidFormat
+		public var errorDescription: String? {
+			return "Invalid image format"
+		}
+	}
 
-	fileprivate let cache = Cache<String, DiscardableTask<UIImage, NSError>>()
+	public static let shared = ImageLoading()
 
-	public func taskWithURL(_ url: URL) -> DiscardableTask<UIImage, NSError> {
+	private let cache = Cache<String, Task>()
+
+	public func taskWithURL(_ url: URL) -> Task {
 		return taskWithRequest(URLRequest(url: url))
 	}
 
-	public func taskWithRequest(_ request: URLRequest) -> DiscardableTask<UIImage, NSError> {
+	public func taskWithRequest(_ request: URLRequest) -> Task {
 		let url = request.url!.absoluteString
-		if let task = cache.storage[url] {
+		if let task = self.cache.storage[url] {
 			return task
 		} else {
-			let task = DiscardableTask<UIImage, NSError>()
+			let task = Task()
 			task.retry = { [weak self, weak task] in
-				if let this = self, let task = task , task.isUndefinedOrFailed {
+				if let this = self, let task = task, task.isUndefinedOrFailed {
 					this.startTask(task, withRequest: request)
 				}
 			}
@@ -35,7 +43,7 @@ public final class ImageLoading {
 	}
 
 	public func cachedImageWithURLString(_ urlString: String?) -> UIImage? {
-		if let urlString = urlString, let task = cache.storage[urlString] {
+		if let urlString = urlString, let task = self.cache.storage[urlString] {
 			switch task.state {
 			case .success(let result):
 				return result
@@ -46,30 +54,30 @@ public final class ImageLoading {
 		return nil
 	}
 
-	fileprivate func startTask(_ task: DiscardableTask<UIImage, NSError>, withRequest request: URLRequest) {
+	private func startTask(_ task: Task, withRequest request: URLRequest) {
 		task.state = .loading
-		let session = URLSession.shared
-		let op = session.dataTask(with: request, completionHandler: {
+		let op = URLSession.shared.dataTask(with: request) {
 			[weak task] data, response, error in
-			var state = DiscardableTaskState<UIImage, NSError>.undefined
-			if let error = error as? NSError {
-				if error.domain == NSURLErrorDomain && error.code == NSURLErrorCancelled {
+			let state: Task.State
+			if let error = error {
+				if let error = error as? URLError, error.code == .cancelled {
 					return
 				}
 				state = .failure(error: error)
 			} else if let data = data, let image = UIImage(data: data) {
 				state = .success(result: image)
+			} else {
+				state = .failure(error: Error.invalidFormat)
 			}
 			DispatchQueue.main.async {
 				task?.state = state
 				task?.cancel = nil
 			}
-		}) 
+		}
 		task.cancel = { [weak op, weak task] in
 			task?.state = .undefined
 			op?.cancel()
 		}
 		op.resume()
 	}
-	
 }

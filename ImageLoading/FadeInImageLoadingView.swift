@@ -9,12 +9,11 @@ import Foundation
 import UIKit
 
 open class FadeInImageLoadingView: ImageLoadingView {
-
 	open override func transition(
-		from oldState: DiscardableTaskState<UIImage, NSError>,
-		ofTask oldTask: DiscardableTask<UIImage, NSError>?,
-		to newState: DiscardableTaskState<UIImage, NSError>,
-		ofTask newTask: DiscardableTask<UIImage, NSError>?)
+		from oldState: Task.State,
+		ofTask oldTask: Task?,
+		to newState: Task.State,
+		ofTask newTask: Task?)
 	{
 		var fade = false
 		if let oldTask = oldTask, let newTask = newTask , oldTask === newTask {
@@ -32,12 +31,11 @@ open class FadeInImageLoadingView: ImageLoadingView {
 			UIView.transition(
 				with: self,
 				duration: 0.25,
-				options: UIViewAnimationOptions.transitionCrossDissolve,
+				options: .transitionCrossDissolve,
 				animations: callSuper,
 				completion: nil)
 		} else {
 			callSuper()
 		}
 	}
-
 }

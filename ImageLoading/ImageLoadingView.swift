@@ -8,48 +8,56 @@
 import UIKit
 
 open class ImageLoadingView: UIImageView {
+	public typealias Task = DiscardableTask<UIImage>
 
 	@IBInspectable public final var imageForUndefinedState: UIImage?
 	@IBInspectable public final var imageForLoadingState: UIImage?
 	@IBInspectable public final var imageForFailureState: UIImage?
 
-	fileprivate final var imageTaskUnobserve: ((Void) -> Void)?
-
-	public final var imageTask: DiscardableTask<UIImage, NSError>? {
+	private var imageTaskUnobserve: (() -> ())?
+	private var previousTask: Task? = nil
+	private var previousState = Task.State.undefined
+	public final var imageTask: Task? {
 		didSet {
-			let newValue = imageTask
-			if oldValue === newValue {
+			if self.imageTask === oldValue {
 				return
 			}
-			var prevTask = oldValue
-			var prevState = oldValue?.state ?? .undefined
-			imageTaskUnobserve?()
-			imageTaskUnobserve = newValue?.observe {
-				[weak self] state in
-				if let this = self {
-					this.transition(from: prevState, ofTask: prevTask, to: state, ofTask: newValue)
-					prevState = state
-					prevTask = newValue
+			self.imageTaskUnobserve?()
+			if let imageTask = self.imageTask {
+				self.imageTaskUnobserve = imageTask.observe {
+					[weak self] state in
+					self?.transitionToState(state)
 				}
-			}
-			if newValue == nil {
-				self.transition(from: prevState, ofTask: prevTask, to: .undefined, ofTask: newValue)
+			} else {
+				self.imageTaskUnobserve = nil
+				self.transitionToState(.undefined)
 			}
 		}
 	}
 
-	deinit {
-		imageTaskUnobserve?()
+	private func transitionToState(_ state: Task.State) {
+		self.transition(
+			from: self.previousState,
+			ofTask: self.previousTask,
+			to: state,
+			ofTask: self.imageTask
+		)
+		self.previousState = state
+		self.previousTask = self.imageTask
 	}
 
-	open func setCommonPlaceholderImage(_ image: UIImage?) {
+	deinit {
+		self.imageTaskUnobserve?()
+	}
+
+	public func setCommonPlaceholderImage(_ image: UIImage?) {
 		self.imageForUndefinedState = image
 		self.imageForLoadingState = image
 		self.imageForFailureState = image
 	}
 
-	open func setImageTaskWithImage(_ image: UIImage?) {
-		let task = DiscardableTask<UIImage, NSError>()
+	public func setImageTaskWithImage(_ image: UIImage?) {
+		let task = Task()
 		if let image = image {
 			task.state = .success(result: image)
 		} else {
@@ -58,35 +66,35 @@ open class ImageLoadingView: UIImageView {
 		self.imageTask = task
 	}
 
-	open func setImageTaskWithURLString(_ urlString: String?) {
+	public func setImageTaskWithURLString(_ urlString: String?) {
 		if let urlString = urlString, let url = URL(string: urlString) {
-			self.imageTask = ImageLoading.sharedInstance.taskWithURL(url)
+			self.imageTask = ImageLoading.shared.taskWithURL(url)
 		} else {
 			self.imageTask = nil
 		}
 	}
 
-	open func setImageTaskWithURL(_ url: URL?) {
+	public func setImageTaskWithURL(_ url: URL?) {
 		if let url = url {
-			self.imageTask = ImageLoading.sharedInstance.taskWithURL(url)
+			self.imageTask = ImageLoading.shared.taskWithURL(url)
 		} else {
 			self.imageTask = nil
 		}
 	}
 
-	open func setImageTaskWithRequest(_ request: URLRequest?) {
+	public func setImageTaskWithRequest(_ request: URLRequest?) {
 		if let request = request {
-			self.imageTask = ImageLoading.sharedInstance.taskWithRequest(request)
+			self.imageTask = ImageLoading.shared.taskWithRequest(request)
 		} else {
 			self.imageTask = nil
 		}
 	}
 
 	open func transition(
-		from oldState: DiscardableTaskState<UIImage, NSError>,
-		ofTask oldTask: DiscardableTask<UIImage, NSError>?,
-		to newState: DiscardableTaskState<UIImage, NSError>,
-		ofTask newTask: DiscardableTask<UIImage, NSError>?)
+		from oldState: Task.State,
+		ofTask oldTask: Task?,
+		to newState: Task.State,
+		ofTask newTask: Task?)
 	{
 		switch newState {
 		case .undefined:
@@ -100,12 +108,11 @@ open class ImageLoadingView: UIImageView {
 		}
 	}
 
-	@IBAction open func retryImageTask() {
+	@IBAction public func retryImageTask() {
 		self.imageTask?.retry?()
 	}
 
-	@IBAction open func cancelImageTask() {
+	@IBAction public func cancelImageTask() {
 		self.imageTask?.cancel?()
 	}
-	
 }

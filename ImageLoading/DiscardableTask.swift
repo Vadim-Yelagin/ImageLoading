@@ -7,65 +7,57 @@
 
 import Foundation
 
-public enum DiscardableTaskState<T, E> {
+public enum DiscardableTaskState<T> {
 	case undefined
 	case loading
 	case success(result: T)
-	case failure(error: E)
+	case failure(error: Error)
 }
 
-public final class DiscardableTask<T, E>: InUseReporting {
+public final class DiscardableTask<T>: InUseReporting {
+	public typealias State = DiscardableTaskState<T>
 
-	fileprivate var observers: [Int: (DiscardableTaskState<T, E>) -> Void] = [:]
-	fileprivate var observerCounter = 0
+	private var observers: [Int: (State) -> ()] = [:]
+	private var observerCounter = 0
 
-	public func observe(_ observer: @escaping (DiscardableTaskState<T, E>) -> Void) -> () -> () {
+	public var cancel: (() -> ())?
+	public var retry: (() -> ())?
+	public var state = State.undefined {
+		didSet {
+			self.observers.values.forEach { $0(state) }
+		}
+	}
+
+	public var isInUse: Bool {
+		return !self.observers.isEmpty
+	}
+
+	public var isUndefinedOrFailed: Bool {
+		switch self.state {
+		case .undefined, .failure:
+			return true
+		case .loading, .success:
+			return false
+		}
+	}
+
+	public func observe(_ observer: @escaping (State) -> ()) -> () -> () {
 		self.retry?()
-		observer(state)
-		let idx = observerCounter
-		observerCounter += 1
-		observers[idx] = observer
+		observer(self.state)
+		let idx = self.observerCounter
+		self.observerCounter += 1
+		self.observers[idx] = observer
 		return { [weak self] in self?.unobserve(idx) }
 	}
 
-	fileprivate func unobserve(_ idx: Int) {
+	private func unobserve(_ idx: Int) {
 		self.observers[idx] = nil
 		if self.observers.isEmpty {
 			self.cancel?()
 		}
 	}
 
-	public var state: DiscardableTaskState<T, E> = .undefined {
-		didSet {
-			for (_, observer) in observers {
-				observer(state)
-			}
-		}
-	}
-
-	public var isUndefinedOrFailed: Bool {
-		switch state {
-		case .undefined:
-			return true
-		case .failure:
-			return true
-		case .loading:
-			return false
-		case .success:
-			return false
-		}
-	}
-
-	public var cancel: ((Void) -> Void)?
-
-	public var retry: ((Void) -> Void)?
-
 	deinit {
 		self.cancel?()
 	}
-
-	public var isInUse: Bool {
-		return !observers.isEmpty
-	}
-	
 }
